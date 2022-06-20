@@ -1,6 +1,4 @@
 {
-    "editor.tabSize": 2,
-    "github-actions.workflows.pinned.workflows": [
-        ".github/workflows/deploy.yml"
-    ]
+  "editor.tabSize": 2,
+  "github-actions.workflows.pinned.workflows": [".github/workflows/deploy.yml"]
 }

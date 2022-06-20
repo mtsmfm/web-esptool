@@ -1,5 +1,4 @@
-[Web ESPTool](https://esp.xingrz.me) [![Auto deploy](https://github.com/xingrz/web-esptool/actions/workflows/deploy.yml/badge.svg)](https://github.com/xingrz/web-esptool/actions/workflows/deploy.yml)
-==========
+# [Web ESPTool](https://esp.xingrz.me) [![Auto deploy](https://github.com/xingrz/web-esptool/actions/workflows/deploy.yml/badge.svg)](https://github.com/xingrz/web-esptool/actions/workflows/deploy.yml)
 
 [![license][license-img]][license-url] [![issues][issues-img]][issues-url] [![commits][commits-img]][commits-url]
 
@@ -25,10 +24,10 @@ npm run serve
 
 ## Links
 
-* [esptool.py](https://github.com/espressif/esptool)
-* [Espressif Serial Protocol](https://github.com/espressif/esptool/wiki/Serial-Protocol)
-* [Web Serial API](https://wicg.github.io/serial/)
-* [Ant Design Vue](https://antdv.com/)
+- [esptool.py](https://github.com/espressif/esptool)
+- [Espressif Serial Protocol](https://github.com/espressif/esptool/wiki/Serial-Protocol)
+- [Web Serial API](https://wicg.github.io/serial/)
+- [Ant Design Vue](https://antdv.com/)
 
 ## License
 

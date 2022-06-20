@@ -1,18 +1,18 @@
-import { promisify } from 'util';
-import EventEmitter from 'events';
-import zlib from 'zlib';
-import hex from './utils/hex';
-import once from './utils/once';
-import sleep from './utils/sleep';
-import pack from './utils/pack';
-import unpack from './utils/unpack';
-import { IFlashArgs } from './';
+import { promisify } from "util";
+import EventEmitter from "events";
+import zlib from "zlib";
+import hex from "./utils/hex";
+import once from "./utils/once";
+import sleep from "./utils/sleep";
+import pack from "./utils/pack";
+import unpack from "./utils/unpack";
+import { IFlashArgs } from "./";
 
 const unzip = promisify(zlib.unzip);
 const deflate = promisify(zlib.deflate);
 
-const DTR = 'dataTerminalReady';
-const RTS = 'requestToSend';
+const DTR = "dataTerminalReady";
+const RTS = "requestToSend";
 
 interface IResponse {
   val: number;
@@ -28,13 +28,12 @@ export interface IFlashProgress {
 }
 
 export default class ESPLoader {
-
   static TRACE = false;
 
   // This ROM address has a different value on each chip model
   static CHIP_DETECT_MAGIC_REG_ADDR = 0x40001000;
 
-  CHIP_NAME = 'Espressif device';
+  CHIP_NAME = "Espressif device";
   IS_STUB = false;
 
   COMPRESS = true;
@@ -47,14 +46,14 @@ export default class ESPLoader {
   ESP_MEM_END = 0x06;
   ESP_MEM_DATA = 0x07;
   ESP_SYNC = 0x08;
-  ESP_READ_REG = 0x0A;
+  ESP_READ_REG = 0x0a;
   ESP_FLASH_DEFL_BEGIN = 0x10;
   ESP_FLASH_DEFL_DATA = 0x11;
   ESP_FLASH_DEFL_END = 0x12;
 
   // Some comands supported by ESP32 ROM bootloader(or -8266 w / stub)
-  ESP_SPI_ATTACH = 0x0D;
-  ESP_CHANGE_BAUDRATE = 0x0F;
+  ESP_SPI_ATTACH = 0x0d;
+  ESP_CHANGE_BAUDRATE = 0x0f;
 
   // Maximum block sized for RAM and Flash writes, respectively.
   ESP_RAM_BLOCK = 0x1800;
@@ -86,7 +85,7 @@ export default class ESPLoader {
 
   usb_jtag_serial = false;
 
-  STUB_CLASS?: { new(port: SerialPort): ESPLoader };
+  STUB_CLASS?: { new (port: SerialPort): ESPLoader };
 
   private _trace: (text?: string) => void;
 
@@ -96,7 +95,7 @@ export default class ESPLoader {
     this.queue = Buffer.alloc(0);
 
     this._trace = ESPLoader.TRACE
-      ? (text) => console.log(`%cTRACE ${text}`, 'color: darkcyan')
+      ? (text) => console.log(`%cTRACE ${text}`, "color: darkcyan")
       : () => null;
   }
 
@@ -113,13 +112,13 @@ export default class ESPLoader {
   private async _read(): Promise<void> {
     if (!this.port?.readable) return;
 
-    const reader = this.reader = this.port.readable.getReader();
+    const reader = (this.reader = this.port.readable.getReader());
     try {
       while (this.reader) {
         const { value, done } = await reader.read();
         if (!value || done) break;
         const data = Buffer.from(value);
-        this._trace(`Read ${data.length} bytes: ${data.toString('hex')}`);
+        this._trace(`Read ${data.length} bytes: ${data.toString("hex")}`);
         const { queue, packets } = unpack(this.queue, data);
         this.queue = queue;
         for (const packet of packets) {
@@ -134,7 +133,7 @@ export default class ESPLoader {
 
   private async _write(data: Buffer): Promise<void> {
     data = pack(data);
-    this._trace(`Write ${data.length} bytes: ${data.toString('hex')}`);
+    this._trace(`Write ${data.length} bytes: ${data.toString("hex")}`);
     const writer = this.port.writable?.getWriter();
     if (writer) {
       await writer.write(data);
@@ -150,13 +149,23 @@ export default class ESPLoader {
     const val = data.readUInt32LE(4);
     data = data.slice(8);
 
-    this._trace(`< res op=${hex(op)} len=${size} val=${val} data=${data.toString('hex')}`);
+    this._trace(
+      `< res op=${hex(op)} len=${size} val=${val} data=${data.toString("hex")}`
+    );
 
     this.dispatcher.emit(`res:${op}`, { val, data } as IResponse);
   }
 
-  async command(op: number, data: Buffer, chk = 0, timeout = 500, tries = 5): Promise<IResponse> {
-    this._trace(`> req op=${hex(op)} len=${data.length} data=${data.toString('hex')}`);
+  async command(
+    op: number,
+    data: Buffer,
+    chk = 0,
+    timeout = 500,
+    tries = 5
+  ): Promise<IResponse> {
+    this._trace(
+      `> req op=${hex(op)} len=${data.length} data=${data.toString("hex")}`
+    );
 
     const hdr = Buffer.alloc(8);
     hdr[0] = 0x00;
@@ -167,12 +176,12 @@ export default class ESPLoader {
     for (let i = 0; i < tries; i++) {
       try {
         await this._write(out);
-        return await once(this.dispatcher, `res:${op}`, timeout) as IResponse;
+        return (await once(this.dispatcher, `res:${op}`, timeout)) as IResponse;
       } catch (e) {
         // ignored
       }
     }
-    throw new Error('Timeout waiting for command response');
+    throw new Error("Timeout waiting for command response");
   }
 
   private check({ val, data }: IResponse): number | Buffer {
@@ -182,7 +191,7 @@ export default class ESPLoader {
 
     const status_bytes = data.slice(0, this.STATUS_BYTES_LENGTH);
     if (status_bytes[0] != 0) {
-      throw new Error(`Command failed: ${status_bytes.toString('hex')}`);
+      throw new Error(`Command failed: ${status_bytes.toString("hex")}`);
     }
 
     // if we had more data than just the status bytes, return it as the result
@@ -235,7 +244,7 @@ export default class ESPLoader {
       // Sleep longer after reset.
       // This workaround only works on revision 0 ESP32 chips,
       // it exploits a silicon bug spurious watchdog reset.
-      await sleep(400);  // allow watchdog reset to occur
+      await sleep(400); // allow watchdog reset to occur
     }
     await sleep(50);
 
@@ -280,7 +289,7 @@ export default class ESPLoader {
   async connect(attempts = 7): Promise<boolean> {
     if (this.port?.getInfo()?.usbProductId == this.USB_JTAG_SERIAL_PID) {
       this.usb_jtag_serial = true;
-      console.log('Detected integrated USB Serial/JTAG');
+      console.log("Detected integrated USB Serial/JTAG");
     }
 
     for (let i = 0; i < attempts; i++) {
@@ -306,7 +315,7 @@ export default class ESPLoader {
   }
 
   async get_chip_description(): Promise<string> {
-    throw new Error('Not supported');
+    throw new Error("Not supported");
   }
 
   get_erase_size(offset: number, size: number): number {
@@ -321,7 +330,12 @@ export default class ESPLoader {
     return state;
   }
 
-  async mem_begin(size: number, blocks: number, blocksize: number, offset: number): Promise<void> {
+  async mem_begin(
+    size: number,
+    blocks: number,
+    blocksize: number,
+    offset: number
+  ): Promise<void> {
     const data = Buffer.alloc(16);
     data.writeUInt32LE(size, 0);
     data.writeUInt32LE(blocks, 4);
@@ -339,7 +353,9 @@ export default class ESPLoader {
     hdr.writeUInt32LE(0, 12);
 
     const buf = Buffer.concat([hdr, data]);
-    this.check(await this.command(this.ESP_MEM_DATA, buf, this._checksum(data), 5000, 1));
+    this.check(
+      await this.command(this.ESP_MEM_DATA, buf, this._checksum(data), 5000, 1)
+    );
   }
 
   async mem_finish(entrypoint = 0): Promise<void> {
@@ -350,7 +366,9 @@ export default class ESPLoader {
   }
 
   async flash_begin(size: number, offset: number): Promise<number> {
-    const num_blocks = Math.floor((size + this.FLASH_WRITE_SIZE - 1) / this.FLASH_WRITE_SIZE);
+    const num_blocks = Math.floor(
+      (size + this.FLASH_WRITE_SIZE - 1) / this.FLASH_WRITE_SIZE
+    );
     const erase_size = this.get_erase_size(offset, size);
 
     const data = Buffer.alloc(16);
@@ -372,7 +390,15 @@ export default class ESPLoader {
     hdr.writeUInt32LE(0, 12);
 
     const buf = Buffer.concat([hdr, data]);
-    this.check(await this.command(this.ESP_FLASH_DATA, buf, this._checksum(data), 5000, 1));
+    this.check(
+      await this.command(
+        this.ESP_FLASH_DATA,
+        buf,
+        this._checksum(data),
+        5000,
+        1
+      )
+    );
   }
 
   async flash_finish(reboot = false): Promise<void> {
@@ -381,12 +407,20 @@ export default class ESPLoader {
     this.check(await this.command(this.ESP_FLASH_END, data));
   }
 
-  async flash_defl_begin(size: number, compsize: number, offset: number): Promise<number> {
-    const num_blocks = Math.floor((compsize + this.FLASH_WRITE_SIZE - 1) / this.FLASH_WRITE_SIZE);
-    const erase_blocks = Math.floor((size + this.FLASH_WRITE_SIZE - 1) / this.FLASH_WRITE_SIZE);
+  async flash_defl_begin(
+    size: number,
+    compsize: number,
+    offset: number
+  ): Promise<number> {
+    const num_blocks = Math.floor(
+      (compsize + this.FLASH_WRITE_SIZE - 1) / this.FLASH_WRITE_SIZE
+    );
+    const erase_blocks = Math.floor(
+      (size + this.FLASH_WRITE_SIZE - 1) / this.FLASH_WRITE_SIZE
+    );
 
     const write_size = this.IS_STUB
-      ? size  // stub expects number of bytes here, manages erasing internally
+      ? size // stub expects number of bytes here, manages erasing internally
       : erase_blocks * this.FLASH_WRITE_SIZE; // ROM expects rounded up to erase block size
 
     console.log(`Comporessed ${size} bytes to ${compsize}...`);
@@ -410,7 +444,15 @@ export default class ESPLoader {
     hdr.writeUInt32LE(0, 12);
 
     const buf = Buffer.concat([hdr, data]);
-    this.check(await this.command(this.ESP_FLASH_DEFL_DATA, buf, this._checksum(data), 5000, 1));
+    this.check(
+      await this.command(
+        this.ESP_FLASH_DEFL_DATA,
+        buf,
+        this._checksum(data),
+        5000,
+        1
+      )
+    );
   }
 
   async flash_defl_finish(reboot = false): Promise<void> {
@@ -419,7 +461,11 @@ export default class ESPLoader {
     this.check(await this.command(this.ESP_FLASH_DEFL_END, data));
   }
 
-  private _pad_image(data: Buffer, alignment: number, pad_character = 0xFF): Buffer {
+  private _pad_image(
+    data: Buffer,
+    alignment: number,
+    pad_character = 0xff
+  ): Buffer {
     const pad_mod = data.length % alignment;
     if (pad_mod != 0) {
       data = Buffer.concat([data, Buffer.alloc(pad_mod, pad_character)]);
@@ -431,8 +477,10 @@ export default class ESPLoader {
     if (this.FLASH_SIZES[arg]) {
       return this.FLASH_SIZES[arg];
     } else {
-      const sizes = Object.keys(this.FLASH_SIZES).join(', ');
-      throw new Error(`Flash size '${arg}' is not supported by this chip type. Supported sizes: ${sizes}`);
+      const sizes = Object.keys(this.FLASH_SIZES).join(", ");
+      throw new Error(
+        `Flash size '${arg}' is not supported by this chip type. Supported sizes: ${sizes}`
+      );
     }
   }
 
@@ -446,12 +494,14 @@ export default class ESPLoader {
       return null;
     }
 
-    console.log('Uploading stub...');
-    for (const field of ['text', 'data']) {
+    console.log("Uploading stub...");
+    for (const field of ["text", "data"]) {
       if (!stub[field]) continue;
       const offs = stub[`${field}_start`] as number;
-      const code = await unzip(Buffer.from(stub[field] as string, 'base64'));
-      const blocks = Math.floor((code.length + this.ESP_RAM_BLOCK - 1) / this.ESP_RAM_BLOCK);
+      const code = await unzip(Buffer.from(stub[field] as string, "base64"));
+      const blocks = Math.floor(
+        (code.length + this.ESP_RAM_BLOCK - 1) / this.ESP_RAM_BLOCK
+      );
       await this.mem_begin(code.length, blocks, this.ESP_RAM_BLOCK, offs);
       for (let seq = 0; seq < blocks; seq++) {
         const from_offs = seq * this.ESP_RAM_BLOCK;
@@ -460,11 +510,11 @@ export default class ESPLoader {
       }
     }
 
-    console.log('Running stub...');
-    await this.mem_finish(stub['entry'] as number);
+    console.log("Running stub...");
+    await this.mem_finish(stub["entry"] as number);
     await sleep(500);
 
-    console.log('Stub running...');
+    console.log("Stub running...");
     return new this.STUB_CLASS!(this.port);
   }
 
@@ -472,37 +522,45 @@ export default class ESPLoader {
     console.log(`Changing baud rate from ${oldBaud} to ${baud}`);
     const data = Buffer.alloc(8);
     data.writeUInt32LE(baud, 0);
-    data.writeUInt32LE(this.IS_STUB ? oldBaud : 0, 4);  // stub takes the new baud rate and the old one
+    data.writeUInt32LE(this.IS_STUB ? oldBaud : 0, 4); // stub takes the new baud rate and the old one
     await this.command(this.ESP_CHANGE_BAUDRATE, data);
-    console.log('Changed.');
+    console.log("Changed.");
   }
 
-  private _update_image_flash_params(address: number, args: IFlashArgs, image: Buffer): Buffer {
+  private _update_image_flash_params(
+    address: number,
+    args: IFlashArgs,
+    image: Buffer
+  ): Buffer {
     if (address != this.BOOTLOADER_FLASH_OFFSET) {
-      return image;  // not flashing bootloader offset, so don't modify this
+      return image; // not flashing bootloader offset, so don't modify this
     }
 
     const magic = image[0];
     let flash_mode = image[2];
-    let flash_freq = image[3] & 0x0F;
-    let flash_size = image[3] & 0xF0;
+    let flash_freq = image[3] & 0x0f;
+    let flash_size = image[3] & 0xf0;
 
     if (magic != this.ESP_IMAGE_MAGIC) {
-      console.warn(`Warning: Image file at ${address} doesn't look like an image file, so not changing any flash settings.`);
+      console.warn(
+        `Warning: Image file at ${address} doesn't look like an image file, so not changing any flash settings.`
+      );
       return image;
     }
 
     // TODO: verify bootloader image
 
-    if (args.flashMode && args.flashMode != 'keep') {
-      flash_mode = { 'qio': 0, 'qout': 1, 'dio': 2, 'dout': 3 }[args.flashMode]!;
+    if (args.flashMode && args.flashMode != "keep") {
+      flash_mode = { qio: 0, qout: 1, dio: 2, dout: 3 }[args.flashMode]!;
     }
 
-    if (args.flashFreq && args.flashFreq != 'keep') {
-      flash_freq = { '40m': 0, '26m': 1, '20m': 2, '80m': 0xf }[args.flashFreq]!;
+    if (args.flashFreq && args.flashFreq != "keep") {
+      flash_freq = { "40m": 0, "26m": 1, "20m": 2, "80m": 0xf }[
+        args.flashFreq
+      ]!;
     }
 
-    if (args.flashSize && args.flashSize != 'keep') {
+    if (args.flashSize && args.flashSize != "keep") {
       flash_size = this._parse_flash_size_arg(args.flashSize);
     }
 
@@ -512,7 +570,10 @@ export default class ESPLoader {
     return image;
   }
 
-  async flash(args: IFlashArgs, onProgress: (progress: IFlashProgress) => void): Promise<void> {
+  async flash(
+    args: IFlashArgs,
+    onProgress: (progress: IFlashProgress) => void
+  ): Promise<void> {
     for (let i = 0; i < args.partitions.length; i++) {
       const { address } = args.partitions[i];
       let { image } = args.partitions[i];
@@ -540,14 +601,20 @@ export default class ESPLoader {
       while (image.length > 0) {
         const block = image.slice(0, this.FLASH_WRITE_SIZE);
         if (this.COMPRESS) {
-          console.log(`Writing... (${Math.round((seq + 1) / blocks * 100)}%)`);
+          console.log(
+            `Writing... (${Math.round(((seq + 1) / blocks) * 100)}%)`
+          );
           await this.flash_defl_block(block, seq);
         } else {
-          console.log(`Writing at ${hex(address + written, 4)}... (${Math.round((seq + 1) / blocks * 100)}%)`);
+          console.log(
+            `Writing at ${hex(address + written, 4)}... (${Math.round(
+              ((seq + 1) / blocks) * 100
+            )}%)`
+          );
           await this.flash_block(block, seq);
         }
         image = image.slice(this.FLASH_WRITE_SIZE);
-        seq += 1
+        seq += 1;
         written += block.length;
         onProgress({ index: i, blocks_written: seq + 1, blocks_total: blocks });
       }
@@ -561,7 +628,7 @@ export default class ESPLoader {
       console.log(`Wrote ${written} bytes`);
     }
 
-    console.log('Leaving...');
+    console.log("Leaving...");
 
     if (this.IS_STUB) {
       // skip sending flash_finish to ROM loader here,
@@ -576,9 +643,8 @@ export default class ESPLoader {
   }
 
   async hard_reset(): Promise<void> {
-    await this.port?.setSignals({ [DTR]: false, [RTS]: true });  // EN->LOW
+    await this.port?.setSignals({ [DTR]: false, [RTS]: true }); // EN->LOW
     await sleep(100);
     await this.port?.setSignals({ [DTR]: false, [RTS]: false });
   }
-
 }

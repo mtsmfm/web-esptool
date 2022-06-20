@@ -1,4 +1,4 @@
-import ESPTool from './ESPTool';
+import ESPTool from "./ESPTool";
 export default ESPTool;
 
 export interface IFlashArgs {
@@ -11,9 +11,9 @@ export interface IFlashArgs {
   }[];
 }
 
-export type IFlashMode = 'keep' | 'qio' | 'qout' | 'dio' | 'dout';
-export type IFlashFreq = 'keep' | string;
-export type IFlashSize = 'keep' | string;
+export type IFlashMode = "keep" | "qio" | "qout" | "dio" | "dout";
+export type IFlashFreq = "keep" | string;
+export type IFlashSize = "keep" | string;
 
 export interface IConnectEvent {
   chip_description: string;

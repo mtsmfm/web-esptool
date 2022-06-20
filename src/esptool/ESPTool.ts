@@ -1,26 +1,20 @@
-import EventEmitter from 'events';
+import EventEmitter from "events";
 
-import ESPLoader from './ESPLoader';
-import ESP8266ROM from './ESP8266ROM';
-import ESP32ROM from './ESP32ROM';
-import ESP32S2ROM from './ESP32S2ROM';
-import ESP32C3ROM from './ESP32C3ROM';
+import ESPLoader from "./ESPLoader";
+import ESP8266ROM from "./ESP8266ROM";
+import ESP32ROM from "./ESP32ROM";
+import ESP32S2ROM from "./ESP32S2ROM";
+import ESP32C3ROM from "./ESP32C3ROM";
 
-import { IFlashArgs, IConnectEvent } from './';
-import sleep from './utils/sleep';
+import { IFlashArgs, IConnectEvent } from "./";
+import sleep from "./utils/sleep";
 
 const BAUD_RATE_DEFAULT = 115200;
 const BAUD_RATE_BOOST = 960000;
 
-const LOADERS = [
-  ESP8266ROM,
-  ESP32ROM,
-  ESP32S2ROM,
-  ESP32C3ROM,
-];
+const LOADERS = [ESP8266ROM, ESP32ROM, ESP32S2ROM, ESP32C3ROM];
 
 export default class ESPTool extends EventEmitter {
-
   serial: SerialPort | null = null;
   loader: ESPLoader | null = null;
 
@@ -35,7 +29,9 @@ export default class ESPTool extends EventEmitter {
       const detector = new ESPLoader(this.serial);
       detector.start();
       await detector.connect();
-      const chip_magic_value = await detector.read_reg(ESPLoader.CHIP_DETECT_MAGIC_REG_ADDR);
+      const chip_magic_value = await detector.read_reg(
+        ESPLoader.CHIP_DETECT_MAGIC_REG_ADDR
+      );
       for (const cls of LOADERS) {
         if (cls.CHIP_DETECT_MAGIC_VALUE.includes(chip_magic_value)) {
           this.loader = new cls(this.serial);
@@ -43,13 +39,13 @@ export default class ESPTool extends EventEmitter {
       }
       await detector.release();
       if (!this.loader) {
-        throw new Error('Unsupported chip');
+        throw new Error("Unsupported chip");
       }
       this.loader.start();
 
       const chip_description = await this.loader.get_chip_description();
       console.log(`Detected ${chip_description}`);
-      this.emit('connect', { chip_description } as IConnectEvent);
+      this.emit("connect", { chip_description } as IConnectEvent);
 
       // 3. Load stub loader if present
       const stub = await this.loader.run_stub();
@@ -68,7 +64,7 @@ export default class ESPTool extends EventEmitter {
       await this.serial.open({ baudRate: BAUD_RATE_BOOST });
       this.loader.start();
     } catch (e) {
-      console.warn('Failed launching loader', e);
+      console.warn("Failed launching loader", e);
       await this.serial.close();
       this.serial = null;
       throw e;
@@ -87,8 +83,9 @@ export default class ESPTool extends EventEmitter {
   }
 
   async flash(args: IFlashArgs): Promise<void> {
-    await this.loader?.flash(args, (progress) => this.emit('progress', progress));
+    await this.loader?.flash(args, (progress) =>
+      this.emit("progress", progress)
+    );
     await this.loader?.hard_reset();
   }
-
 }

@@ -1,22 +1,21 @@
-import ESPLoader, { IStub } from './ESPLoader';
+import ESPLoader, { IStub } from "./ESPLoader";
 
 export default class ESP8266ROM extends ESPLoader {
-
   static CHIP_DETECT_MAGIC_VALUE = [0xfff0c101];
 
-  CHIP_NAME = 'ESP8266';
+  CHIP_NAME = "ESP8266";
   IS_STUB = false;
 
   FLASH_SIZES = {
-    '512KB': 0x00,
-    '256KB': 0x10,
-    '1MB': 0x20,
-    '2MB': 0x30,
-    '4MB': 0x40,
-    '2MB-c1': 0x50,
-    '4MB-c1': 0x60,
-    '8MB': 0x80,
-    '16MB': 0x90,
+    "512KB": 0x00,
+    "256KB": 0x10,
+    "1MB": 0x20,
+    "2MB": 0x30,
+    "4MB": 0x40,
+    "2MB-c1": 0x50,
+    "4MB-c1": 0x60,
+    "8MB": 0x80,
+    "16MB": 0x90,
   };
 
   BOOTLOADER_FLASH_OFFSET = 0;
@@ -26,7 +25,7 @@ export default class ESP8266ROM extends ESPLoader {
   async load_stub(): Promise<IStub | null> {
     return await import(
       /* webpackChunkName: 'stub_flasher_8266' */
-      './stubs/stub_flasher_8266.elf'
+      "./stubs/stub_flasher_8266.elf"
     );
   }
 
@@ -64,16 +63,17 @@ export default class ESP8266ROM extends ESPLoader {
 
   async get_chip_description(): Promise<string> {
     const efuses = await this.get_efuses();
-    if ((efuses[0] & (1 << 4)) || (efuses[2] & (1 << 16))) {
+    if (efuses[0] & (1 << 4) || efuses[2] & (1 << 16)) {
       const flash_size = this._get_flash_size(efuses);
       const max_temp = efuses[0] & (1 << 5);
-      const chip_name = {
-        1: max_temp ? 'ESP8285H08' : 'ESP8285N08',
-        2: max_temp ? 'ESP8285H16' : 'ESP8285N16',
-      }[flash_size] || 'ESP8285';
+      const chip_name =
+        {
+          1: max_temp ? "ESP8285H08" : "ESP8285N08",
+          2: max_temp ? "ESP8285H16" : "ESP8285N16",
+        }[flash_size] || "ESP8285";
       return chip_name;
     } else {
-      return 'ESP8266EX';
+      return "ESP8266EX";
     }
   }
 
@@ -94,16 +94,13 @@ export default class ESP8266ROM extends ESPLoader {
       return (num_sectors - head_sectors) * sector_size;
     }
   }
-
 }
 
 class ESP8266StubLoader extends ESP8266ROM {
-
-  FLASH_WRITE_SIZE = 0x4000;  // matches MAX_WRITE_BLOCK in stub_loader.c
+  FLASH_WRITE_SIZE = 0x4000; // matches MAX_WRITE_BLOCK in stub_loader.c
   IS_STUB = true;
 
   get_erase_size(offset: number, size: number): number {
-    return size;  // stub doesn't have same size bug as ROM loader
+    return size; // stub doesn't have same size bug as ROM loader
   }
-
 }

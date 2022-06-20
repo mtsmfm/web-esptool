@@ -1,4 +1,4 @@
-declare module '*.elf' {
-  import { IStub } from './esptool/ESPLoader';
+declare module "*.elf" {
+  import { IStub } from "./esptool/ESPLoader";
   export default IStub;
 }
