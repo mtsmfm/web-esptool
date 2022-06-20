@@ -1,5 +1,6 @@
 import { IStub } from "./ESPLoader";
 import ESP32ROM from "./ESP32ROM";
+import Stub from "./stubs/stub_flasher_32c3";
 
 export default class ESP32C3ROM extends ESP32ROM {
   // Magic value for ESP32C3 eco 1+2 and ESP32C3 eco3 respectivly
@@ -14,10 +15,7 @@ export default class ESP32C3ROM extends ESP32ROM {
   STUB_CLASS = ESP32C3StubLoader;
 
   async load_stub(): Promise<IStub | null> {
-    return await import(
-      /* webpackChunkName: 'stub_flasher_32c3' */
-      "./stubs/stub_flasher_32c3.elf"
-    );
+    return Stub;
   }
 
   async get_pkg_version(): Promise<number> {

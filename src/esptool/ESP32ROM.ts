@@ -1,4 +1,5 @@
 import ESPLoader, { IStub } from "./ESPLoader";
+import Stub from "./stubs/stub_flasher_32";
 
 export default class ESP32ROM extends ESPLoader {
   static CHIP_DETECT_MAGIC_VALUE = [0x00f01d83];
@@ -26,10 +27,7 @@ export default class ESP32ROM extends ESPLoader {
   STUB_CLASS = ESP32StubLoader;
 
   async load_stub(): Promise<IStub | null> {
-    return await import(
-      /* webpackChunkName: 'stub_flasher_32' */
-      "./stubs/stub_flasher_32.elf"
-    );
+    return Stub;
   }
 
   async read_efuse(block: number, n: number): Promise<number> {
