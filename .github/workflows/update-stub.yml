@@ -1,0 +1,64 @@
+on:
+  schedule:
+    - cron: 0 0 * * *
+
+jobs:
+  update-stub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: sudo apt-get update && sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python3-serial
+      - run: mkdir -p ~/esp
+      - run: |
+          cd ~/esp
+          wget -O xtensa-lx106-elf.tar.gz https://dl.espressif.com/dl/xtensa-lx106-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz
+          tar -xvf xtensa-lx106-elf.tar.gz
+          echo "PATH=$PATH:$HOME/esp/xtensa-lx106-elf/bin" >> $GITHUB_ENV
+      - run: |
+          cd ~/esp
+          wget -O xtensa-esp32-elf.tar.xz https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-RC1-linux-amd64.tar.xz
+          tar -xvf xtensa-esp32-elf.tar.xz
+          echo "PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin" >> $GITHUB_ENV
+      - run: |
+          cd ~/esp
+          wget -O xtensa-esp32s2-elf.tar.xz https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-RC1-linux-amd64.tar.xz
+          tar -xvf xtensa-esp32s2-elf.tar.xz
+          echo "PATH=$PATH:$HOME/esp/xtensa-esp32s2-elf/bin" >> $GITHUB_ENV
+      - run: |
+          cd ~/esp
+          wget -O xtensa-esp32s3-elf.tar.xz https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-RC1-linux-amd64.tar.xz
+          tar -xvf xtensa-esp32s3-elf.tar.xz
+          echo "PATH=$PATH:$HOME/esp/xtensa-esp32s3-elf/bin" >> $GITHUB_ENV
+      - run: |
+          cd ~/esp
+          wget -O riscv32-esp-elf.tar.xz https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-RC1-linux-amd64.tar.xz
+          tar -xvf riscv32-esp-elf.tar.xz
+          echo "PATH=$PATH:$HOME/esp/riscv32-esp-elf/bin" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v3
+        with:
+          repository: "espressif/esptool"
+          path: /home/runner/work/web-esptool/web-esptool/esptool
+
+      - run: make
+        working-directory: /home/runner/work/web-esptool/web-esptool/esptool/flasher_stub
+
+      - run: cp /home/runner/work/web-esptool/web-esptool/esptool/flasher_stub/build/stub_flasher*.elf src/esptool/stubs
+
+      - run: rm -rf /home/runner/work/web-esptool/web-esptool/esptool
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - run: npm ci
+
+      - uses: technote-space/create-pr-action@v2
+        with:
+          EXECUTE_COMMANDS: |
+            npx ts-node scripts/elf_to_ts.ts
+          COMMIT_MESSAGE: "Update stub"
+          COMMIT_NAME: "github-actions[bot]"
+          COMMIT_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+          PR_BRANCH_NAME: "update-stub-${PR_ID}"
+          PR_TITLE: "Update stub"
