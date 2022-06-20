@@ -47,6 +47,8 @@ jobs:
 
       - run: cp /home/runner/work/web-esptool/web-esptool/esptool/flasher_stub/build/stub_flasher*.elf src/esptool/stubs
 
+      - run: rm -rf /home/runner/work/web-esptool/web-esptool/esptool
+
       - uses: actions/setup-node@v3
         with:
           node-version: 16
