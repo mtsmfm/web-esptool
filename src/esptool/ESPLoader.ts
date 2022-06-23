@@ -253,18 +253,33 @@ export default class ESPLoader {
   }
 
   private async _bootloader_reset_usb(): Promise<void> {
-    // Set IO0
-    await this.port?.setSignals({ [DTR]: true, [RTS]: false });
+    const port = this.port;
+    await port.setSignals({ requestToSend: false });
+    await port.setSignals({ dataTerminalReady: false });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await port.setSignals({ dataTerminalReady: true });
+    await port.setSignals({ requestToSend: false });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await port.setSignals({ requestToSend: true });
+    await port.setSignals({ dataTerminalReady: false });
+    await port.setSignals({ requestToSend: true });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await port.setSignals({ dataTerminalReady: false });
+    await port.setSignals({ requestToSend: false });
 
-    await sleep(100);
+    // await this.port?.setSignals({ [DTR]: false, [RTS]: false });
 
-    // Reset. Note dtr/rts calls inverted so we go through (1,1) instead of (0,0)
-    await this.port?.setSignals({ [DTR]: false, [RTS]: true });
+    // await sleep(100);
 
-    await sleep(100);
+    // await this.port?.setSignals({ [DTR]: true, [RTS]: false });
 
-    // Done
-    await this.port?.setSignals({ [DTR]: false, [RTS]: false });
+    // await sleep(100);
+
+    // await this.port?.setSignals({ [DTR]: false, [RTS]: true });
+
+    // await sleep(100);
+
+    // await this.port?.setSignals({ [DTR]: false, [RTS]: false });
   }
 
   private async _connect_attempt(esp32r0_delay = false): Promise<boolean> {
