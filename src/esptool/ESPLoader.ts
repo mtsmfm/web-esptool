@@ -55,6 +55,9 @@ export default class ESPLoader {
   ESP_SPI_ATTACH = 0x0d;
   ESP_CHANGE_BAUDRATE = 0x0f;
 
+  // Some commands supported by stub only
+  ESP_READ_FLASH = 0xd2;
+
   // Maximum block sized for RAM and Flash writes, respectively.
   ESP_RAM_BLOCK = 0x1800;
 
@@ -143,7 +146,11 @@ export default class ESPLoader {
 
   private _dispatch(data: Buffer): void {
     if (data.length < 8) return;
-    if (data[0] != 0x01) return;
+    if (data[0] != 0x01) {
+      this.dispatcher.emit("data", data);
+      return;
+    }
+
     const op = data[1];
     const size = data.readUInt16LE(2);
     const val = data.readUInt32LE(4);
@@ -643,5 +650,21 @@ export default class ESPLoader {
     await this.port?.setSignals({ [DTR]: false, [RTS]: true }); // EN->LOW
     await sleep(100);
     await this.port?.setSignals({ [DTR]: false, [RTS]: false });
+  }
+
+  async read_flash(
+    offset: number,
+    length: number,
+    timeout = 1000
+  ): Promise<Buffer> {
+    const data = Buffer.alloc(4 * 4);
+    data.writeUInt32LE(offset, 0);
+    data.writeUInt32LE(length, 4);
+    data.writeUInt32LE(this.FLASH_SECTOR_SIZE, 8);
+    data.writeUInt32LE(64, 12);
+
+    this.check(await this.command(this.ESP_READ_FLASH, data));
+
+    return await once(this.dispatcher, "data", timeout);
   }
 }
